@@ -31,6 +31,27 @@ def read_dataset(filename):
         dataset.append(line)
     return dataset, labels
 
+def read_dataset_v2(filename):
+    """
+    年龄段：0代表青年，1代表中年，2代表老年；
+    有工作：0代表否，1代表是；
+    有自己的房子：0代表否，1代表是；
+    信贷情况：0代表一般，1代表好，2代表非常好；
+    类别(是否给贷款)：0代表否，1代表是
+    """
+    fr = open(filename, 'r',encoding='utf')
+    all_lines = fr.readlines()  # list形式,每行为1个str
+    # print all_lines
+    labels = ['serverprovince','servercity','city_level','nettype','model','os','osversion','brand','channel','label']
+    # featname=all_lines[0].strip().split(',')  #list形式
+    # featname=featname[:-1]
+    labelCounts = {}
+    dataset = []
+    for line in all_lines[0:]:
+        line = line.strip().split(',')  # 以逗号为分割符拆分列表
+        dataset.append(line)
+    return dataset, labels
+
 
 def read_testset(testfile):
     """
@@ -68,6 +89,8 @@ def cal_entropy(dataset):
 
 # 划分数据集
 def splitdataset(dataset, axis, value):
+    if value=='NULL':
+        print("null")
     retdataset = []  # 创建返回的数据集列表
     for featVec in dataset:  # 抽取符合划分特征的值
         if featVec[axis] == value:
@@ -430,11 +453,11 @@ def cal_acc(test_output, label):
 
 
 if __name__ == '__main__':
-    filename = 'dataset.txt'
+    filename = 'traindata_pos_neg_category2.log'
     testfile = 'testset.txt'
-    dataset, labels = read_dataset(filename)
+    dataset, labels = read_dataset_v2(filename)
     # dataset,features=createDataSet()
-    print('dataset', dataset)
+    # print('dataset', dataset)
     print("---------------------------------------------")
     print(u"数据集长度", len(dataset))
     print("Ent(D):", cal_entropy(dataset))
