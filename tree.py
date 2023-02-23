@@ -6,9 +6,23 @@ import treePlotter
 from collections import Counter
 
 
-pre_pruning = True
-post_pruning = True
+pre_pruning = False
+post_pruning = False
 
+
+result={}
+result[0]=0
+result[1]=0
+result[2]=0
+result[3]=0
+result[4]=0
+result[5]=0
+result[6]=0
+result[7]=0
+result[8]=0
+result[9]=0
+result_cnt= {}
+result_score= {}
 
 def read_dataset(filename):
     """
@@ -42,7 +56,7 @@ def read_dataset_v2(filename):
     fr = open(filename, 'r',encoding='utf')
     all_lines = fr.readlines()  # list形式,每行为1个str
     # print all_lines
-    labels = ['serverprovince','servercity','city_level','nettype','model','os','osversion','brand','channel','label']
+    labels = ['serverprovince','servercity','city_level','nettype','model','os','osversion','manufacturer','brand','channel']
     # featname=all_lines[0].strip().split(',')  #list形式
     # featname=featname[:-1]
     labelCounts = {}
@@ -61,11 +75,12 @@ def read_testset(testfile):
     信贷情况：0代表一般，1代表好，2代表非常好；
     类别(是否给贷款)：0代表否，1代表是
     """
-    fr = open(testfile, 'r')
+    fr = open(testfile, 'r',encoding='utf')
     all_lines = fr.readlines()
     testset = []
     for line in all_lines[0:]:
         line = line.strip().split(',')  # 以逗号为分割符拆分列表
+        line=line[:-1]
         testset.append(line)
     return testset
 
@@ -124,11 +139,12 @@ def ID3_chooseBestFeatureToSplit(dataset):
             p = len(subdataset) / float(len(dataset))
             newEnt += p * cal_entropy(subdataset)
         infoGain = baseEnt - newEnt
-        print(u"ID3中第%d个特征的信息增益为：%.3f" % (i, infoGain))
+        print(u"ID3中第%d个特征的信息增益为：%.5f" % (i, infoGain))
+        result[i]+=infoGain
         if (infoGain > bestInfoGain):
             bestInfoGain = infoGain  # 计算最好的信息增益
             bestFeature = i
-    return bestFeature
+    return bestFeature,bestInfoGain
 
 
 # C4.5算法
@@ -152,6 +168,7 @@ def C45_chooseBestFeatureToSplit(dataset):
             continue
         infoGain_ratio = infoGain / IV  # 这个feature的infoGain_ratio
         print(u"C4.5中第%d个特征的信息增益率为：%.3f" % (i, infoGain_ratio))
+        result[i] += infoGain_ratio
         if (infoGain_ratio > bestInfoGain_ratio):  # 选择最大的gain ratio
             bestInfoGain_ratio = infoGain_ratio
             bestFeature = i  # 选择最大的gain ratio对应的feature
@@ -202,9 +219,18 @@ def ID3_createTree(dataset, labels, test_dataset):
     if len(dataset[0]) == 1:
         # 遍历完所有特征时返回出现次数最多的
         return majorityCnt(classList)
-    bestFeat = ID3_chooseBestFeatureToSplit(dataset)
+    bestFeat, bestInfoGain = ID3_chooseBestFeatureToSplit(dataset)
     bestFeatLabel = labels[bestFeat]
-    print(u"此时最优索引为：" + (bestFeatLabel))
+    score = bestInfoGain * len(dataset)
+    if bestFeatLabel not in result_score:
+        result_score[bestFeatLabel] = score
+    else:
+        result_score[bestFeatLabel] += score
+    print(u"此时最优索引为：" + (bestFeatLabel),"bestInfoGain: ", bestInfoGain, "dataset num: ", len(dataset))
+    if bestFeatLabel not in result_cnt:
+        result_cnt[bestFeatLabel]=1
+    else:
+        result_cnt[bestFeatLabel] += 1
 
     ID3Tree = {bestFeatLabel: {}}
     del (labels[bestFeat])
@@ -240,10 +266,8 @@ def ID3_createTree(dataset, labels, test_dataset):
 
     for value in uniqueVals:
         subLabels = labels[:]
-        ID3Tree[bestFeatLabel][value] = ID3_createTree(
-            splitdataset(dataset, bestFeat, value),
-            subLabels,
-            splitdataset(test_dataset, bestFeat, value))
+        spliteddata = splitdataset(dataset, bestFeat, value)
+        ID3Tree[bestFeatLabel][value] = ID3_createTree(spliteddata, subLabels, splitdataset(test_dataset, bestFeat, value))
 
     if post_pruning:
         tree_output = classifytest(ID3Tree,
@@ -276,6 +300,10 @@ def C45_createTree(dataset, labels, test_dataset):
     bestFeat = C45_chooseBestFeatureToSplit(dataset)
     bestFeatLabel = labels[bestFeat]
     print(u"此时最优索引为：" + (bestFeatLabel))
+    if bestFeatLabel not in result_cnt:
+        result_cnt[bestFeatLabel]=1
+    else:
+        result_cnt[bestFeatLabel] += 1
     C45Tree = {bestFeatLabel: {}}
     del (labels[bestFeat])
     # 得到列表包括节点所有的属性值
@@ -453,8 +481,8 @@ def cal_acc(test_output, label):
 
 
 if __name__ == '__main__':
-    filename = 'traindata_pos_neg_category2.log'
-    testfile = 'testset.txt'
+    filename = 'traindata_pos_neg_category_pay.log'
+    testfile = filename
     dataset, labels = read_dataset_v2(filename)
     # dataset,features=createDataSet()
     # print('dataset', dataset)
@@ -482,10 +510,10 @@ if __name__ == '__main__':
             ID3desicionTree = ID3_createTree(dataset, labels_tmp, test_dataset=read_testset(testfile))
             print('ID3desicionTree:\n', ID3desicionTree)
             # treePlotter.createPlot(ID3desicionTree)
-            treePlotter.ID3_Tree(ID3desicionTree)
-            testSet = read_testset(testfile)
-            print("下面为测试数据集结果：")
-            print('ID3_TestSet_classifyResult:\n', classifytest(ID3desicionTree, labels, testSet))
+            # treePlotter.ID3_Tree(ID3desicionTree)
+            # testSet = read_testset(testfile)
+            # print("下面为测试数据集结果：")
+            # print('ID3_TestSet_classifyResult:\n', classifytest(ID3desicionTree, labels, testSet))
             print("---------------------------------------------")
 
         # C4.5决策树
@@ -493,10 +521,10 @@ if __name__ == '__main__':
             labels_tmp = labels[:]  # 拷贝，createTree会改变labels
             C45desicionTree = C45_createTree(dataset, labels_tmp, test_dataset=read_testset(testfile))
             print('C45desicionTree:\n', C45desicionTree)
-            treePlotter.C45_Tree(C45desicionTree)
+            # treePlotter.C45_Tree(C45desicionTree)
             testSet = read_testset(testfile)
             print("下面为测试数据集结果：")
-            print('C4.5_TestSet_classifyResult:\n', classifytest(C45desicionTree, labels, testSet))
+            # print('C4.5_TestSet_classifyResult:\n', classifytest(C45desicionTree, labels, testSet))
             print("---------------------------------------------")
 
         # CART决策树
@@ -510,3 +538,7 @@ if __name__ == '__main__':
             print('CART_TestSet_classifyResult:\n', classifytest(CARTdesicionTree, labels, testSet))
 
         break
+
+    print("result: ", result)
+    print("result_cnt: ", result_cnt)
+    print("result_score: ", result_score)
