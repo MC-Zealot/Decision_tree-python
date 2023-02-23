@@ -23,6 +23,7 @@ result[8]=0
 result[9]=0
 result_cnt= {}
 result_score= {}
+result_score2= {}
 
 def read_dataset(filename):
     """
@@ -263,10 +264,22 @@ def ID3_createTree(dataset, labels, test_dataset):
 
         if cut_acc <= root_acc:
             return leaf_output
-
+    sumInfo = 0
+    all = len(dataset) * cal_entropy(dataset)
     for value in uniqueVals:
         subLabels = labels[:]
         spliteddata = splitdataset(dataset, bestFeat, value)
+        sumInfo+= len(spliteddata) * cal_entropy(spliteddata)
+    tmpscore = all - sumInfo
+    if bestFeatLabel not in result_score2:
+        result_score2[bestFeatLabel] = tmpscore
+    else:
+        result_score2[bestFeatLabel] += tmpscore
+    print(u"此时最优索引为：" + (bestFeatLabel), "bestInfoGain: ", bestInfoGain, "dataset num: ", len(dataset))
+    for value in uniqueVals:
+        subLabels = labels[:]
+        spliteddata = splitdataset(dataset, bestFeat, value)
+        sumInfo+=cal_entropy(spliteddata)
         ID3Tree[bestFeatLabel][value] = ID3_createTree(spliteddata, subLabels, splitdataset(test_dataset, bestFeat, value))
 
     if post_pruning:
@@ -542,3 +555,4 @@ if __name__ == '__main__':
     print("result: ", result)
     print("result_cnt: ", result_cnt)
     print("result_score: ", result_score)
+    print("result_score2: ", result_score2)
