@@ -24,7 +24,7 @@ result[9]=0
 result_cnt= {}
 result_score= {}
 result_score2= {}
-
+all_num = 0
 def read_dataset(filename):
     """
     年龄段：0代表青年，1代表中年，2代表老年；
@@ -269,13 +269,13 @@ def ID3_createTree(dataset, labels, test_dataset):
     for value in uniqueVals:
         subLabels = labels[:]
         spliteddata = splitdataset(dataset, bestFeat, value)
-        sumInfo+= len(spliteddata) * cal_entropy(spliteddata)
+        sumInfo+= (len(spliteddata) * cal_entropy(spliteddata))
     tmpscore = all - sumInfo
     if bestFeatLabel not in result_score2:
         result_score2[bestFeatLabel] = tmpscore
     else:
         result_score2[bestFeatLabel] += tmpscore
-    print(u"此时最优索引为：" + (bestFeatLabel), "bestInfoGain: ", bestInfoGain, "dataset num: ", len(dataset))
+    # print(u"此时最优索引为：" + (bestFeatLabel), "bestInfoGain: ", bestInfoGain, "dataset num: ", len(dataset))
     for value in uniqueVals:
         subLabels = labels[:]
         spliteddata = splitdataset(dataset, bestFeat, value)
@@ -497,6 +497,7 @@ if __name__ == '__main__':
     filename = 'traindata_pos_neg_category_pay.log'
     testfile = filename
     dataset, labels = read_dataset_v2(filename)
+    all_num = len(dataset)
     # dataset,features=createDataSet()
     # print('dataset', dataset)
     print("---------------------------------------------")
@@ -556,3 +557,5 @@ if __name__ == '__main__':
     print("result_cnt: ", result_cnt)
     print("result_score: ", result_score)
     print("result_score2: ", result_score2)
+    for key, val in result_score2.items():
+        print(key+": " + str(val / all_num))
